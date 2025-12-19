@@ -1,31 +1,41 @@
 @echo off
 title Mini Library System Launcher
+setlocal
 
 echo ===================================================
 echo      Starting Mini Library System...
 echo ===================================================
 
-:: 1. Start MongoDB in a new window
-echo Starting MongoDB...
-start "MongoDB Server" mongod
+rem Resolve script directory
+set "SCRIPT_DIR=%~dp0"
+set "PORT=3000"
 
-:: 2. Wait 5 seconds to let the database initialize
+echo Ensuring local MongoDB data directory exists...
+if not exist "%SCRIPT_DIR%data\db" (
+	mkdir "%SCRIPT_DIR%data\db"
+)
+
+echo Starting MongoDB (in new window)...
+start "MongoDB Server" cmd /k "cd /d "%SCRIPT_DIR%" && mongod --dbpath "%SCRIPT_DIR%data\db" --bind_ip 127.0.0.1"
+
 echo Waiting for Database to initialize...
 timeout /t 5 /nobreak >nul
 
-:: 3. Start the Node.js Server in a new window
-echo Starting Node.js Server...
-start "Library Backend" node server.js
+echo Starting Node.js Server (in new window)...
+start "Library Backend" cmd /k "cd /d "%SCRIPT_DIR%" && set PORT=%PORT% && node server.js"
 
-:: 4. Wait 2 seconds for the server to lift
+echo Waiting for server to start...
 timeout /t 2 /nobreak >nul
 
-:: 5. Open the specific URL in the default browser
 echo Opening Application in Browser...
-start http://localhost:3000
+start "" "http://localhost:%PORT%"
 
 echo ===================================================
 echo      System is running!
-echo      Close the pop-up windows to stop the server.
+echo      Close the 'MongoDB Server' and 'Library Backend' windows to stop the services.
 echo ===================================================
+echo
+echo Notes:
+echo - If "mongod" is not recognized, ensure MongoDB is installed and its \bin folder is in PATH.
+echo - To use a custom port or remote MongoDB, set the environment variable MONGODB_URI or PORT before running this script.
 pause

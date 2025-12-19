@@ -5,7 +5,7 @@ const path = require('path');
 const Book = require('./models/Book');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
@@ -13,9 +13,18 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public'))); // Serve HTML/CSS/JS
 
 // MongoDB Connection
-mongoose.connect('mongodb://127.0.0.1:27017/mini_library')
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://sean:sean123@cluster0.ddy3sjl.mongodb.net/library?retryWrites=true&w=majority';
+
+mongoose.connect(MONGODB_URI)
     .then(() => console.log('Connected to MongoDB'))
     .catch(err => console.error('Could not connect to MongoDB', err));
+
+mongoose.connection.on('error', err => {
+    console.error('MongoDB connection error:', err);
+});
+mongoose.connection.on('disconnected', () => {
+    console.warn('MongoDB disconnected');
+});
 
 // --- API Routes ---
 
