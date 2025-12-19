@@ -220,8 +220,15 @@ button[type="submit"]:hover { background-color: var(--primary-hover); transform:
 
 .btn-checkout { background-color: var(--success); }
 .btn-checkin { background-color: var(--warning); color: #000 !important; }
-.btn-fav { background-color: var(--bg-input) !important; max-width: 40px; font-size: 1.1em; color: var(--text-main); }
+.btn-fav { background-color: var(--bg-input) !important; max-width: 40px; font-size: 1.1em; }
 .btn-fav:hover { background-color: var(--bg-body) !important; }
+
+/* Heart icon color - unfavorited state */
+.btn-fav i { color: #94a3b8; } /* Default muted gray */
+body.light-mode .btn-fav i { color: #374151; } /* Much darker gray for light mode */
+
+/* Heart icon color - favorited state */
+.btn-fav.favorited i { color: #ef4444 !important; }
 .btn-history { background-color: #6366f1; }
 .btn-delete { background-color: rgba(239, 68, 68, 0.1); color: var(--danger) !important; max-width: 40px; }
 .btn-delete:hover { background-color: var(--danger); color: white !important; }
