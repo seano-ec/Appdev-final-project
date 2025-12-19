@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Library System</title>
+    <link href="style.css" rel="stylesheet">
+
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 Mini Library System</h1>
+            <p>Manage your book collection with ease</p>
+        </header>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalBooks">0</div>
+                <div class="stat-label">Total Books</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="availableBooks">0</div>
+                <div class="stat-label">Available</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="checkedOutBooks">0</div>
+                <div class="stat-label">Checked Out</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="form-section">
+                <h2>➕ Add New Book</h2>
+                <form id="addBookForm">
+                    <div class="form-group">
+                        <label for="bookTitle">Book Title *</label>
+                        <input type="text" id="bookTitle" required placeholder="Enter book title">
+                    </div>
+                    <div class="form-group">
+                        <label for="bookAuthor">Author *</label>
+                        <input type="text" id="bookAuthor" required placeholder="Enter author name">
+                    </div>
+                    <div class="form-group">
+                        <label for="bookISBN">ISBN</label>
+                        <input type="text" id="bookISBN" placeholder="Enter ISBN (optional)">
+                    </div>
+                    <div class="form-group">
+                        <label for="bookDescription">Description</label>
+                        <textarea id="bookDescription" placeholder="Brief description (optional)"></textarea>
+                    </div>
+                    <button type="submit">Add Book</button>
+                </form>
+            </div>
+
+            <div class="books-section">
+                <h2>📖 Book Collection</h2>
+                <div class="search-filter">
+                    <input type="text" id="searchInput" placeholder="🔍 Search by title, author, or ISBN...">
+                    <select id="filterStatus">
+                        <option value="all">All Books</option>
+                        <option value="available">Available</option>
+                        <option value="checked-out">Checked Out</option>
+                    </select>
+                </div>
+                <div id="bookList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class Library {
+            constructor() {
+                this.books = this.loadBooks();
+                this.init();
+            }
+
+            init() {
+                this.renderBooks();
+                this.updateStats();
+                this.attachEventListeners();
+            }
+
+            loadBooks() {
+                const stored = localStorage.getItem('libraryBooks');
+                return stored ? JSON.parse(stored) : [];
+            }
+
+            saveBooks() {
+                localStorage.setItem('libraryBooks', JSON.stringify(this.books));
+            }
+
+            addBook(title, author, isbn, description) {
+                const book = {
+                    id: Date.now(),
+                    title,
+                    author,
+                    isbn: isbn || 'N/A',
+                    description: description || 'No description available',
+                    status: 'available',
+                    checkedOutBy: null,
+                    checkedOutDate: null,
+                    addedDate: new Date().toLocaleDateString()
+                };
+                this.books.push(book);
+                this.saveBooks();
+                this.renderBooks();
+                this.updateStats();
+            }
+
+            checkOut(bookId) {
+                const borrower = prompt('Enter borrower name:');
+                if (!borrower) return;
+
+                const book = this.books.find(b => b.id === bookId);
+                if (book) {
+                    book.status = 'checked-out';
+                    book.checkedOutBy = borrower;
+                    book.checkedOutDate = new Date().toLocaleDateString();
+                    this.saveBooks();
+                    this.renderBooks();
+                    this.updateStats();
+                }
+            }
+
+            checkIn(bookId) {
+                const book = this.books.find(b => b.id === bookId);
+                if (book) {
+                    book.status = 'available';
+                    book.checkedOutBy = null;
+                    book.checkedOutDate = null;
+                    this.saveBooks();
+                    this.renderBooks();
+                    this.updateStats();
+                }
+            }
+
+            deleteBook(bookId) {
+                if (confirm('Are you sure you want to delete this book?')) {
+                    this.books = this.books.filter(b => b.id !== bookId);
+                    this.saveBooks();
+                    this.renderBooks();
+                    this.updateStats();
+                }
+            }
+
+            getFilteredBooks() {
+                const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+                const statusFilter = document.getElementById('filterStatus').value;
+
+                return this.books.filter(book => {
+                    const matchesSearch = book.title.toLowerCase().includes(searchTerm) ||
+                                        book.author.toLowerCase().includes(searchTerm) ||
+                                        book.isbn.toLowerCase().includes(searchTerm);
+                    
+                    const matchesStatus = statusFilter === 'all' || book.status === statusFilter;
+
+                    return matchesSearch && matchesStatus;
+                });
+            }
+
+            renderBooks() {
+                const bookList = document.getElementById('bookList');
+                const filteredBooks = this.getFilteredBooks();
+
+                if (filteredBooks.length === 0) {
+                    bookList.innerHTML = `
+                        <div class="empty-state">
+                            <div style="font-size: 4em; margin-bottom: 20px;">📚</div>
+                            <h3>No books found</h3>
+                            <p>Add a book to get started or adjust your search filters</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                bookList.innerHTML = filteredBooks.map(book => `
+                    <div class="book-card ${book.status}">
+                        <div class="book-header">
+                            <div>
+                                <div class="book-title">${this.escapeHtml(book.title)}</div>
+                                <div class="book-author">by ${this.escapeHtml(book.author)}</div>
+                                <div class="book-isbn">ISBN: ${this.escapeHtml(book.isbn)}</div>
+                            </div>
+                            <span class="status-badge ${book.status}">
+                                ${book.status === 'available' ? '✓ Available' : '✗ Checked Out'}
+                            </span>
+                        </div>
+                        <div class="book-description">${this.escapeHtml(book.description)}</div>
+                        <div class="book-details">
+                            <div>Added: ${book.addedDate}</div>
+                            ${book.status === 'checked-out' ? `
+                                <div>Checked out by: <strong>${this.escapeHtml(book.checkedOutBy)}</strong></div>
+                                <div>Check-out date: ${book.checkedOutDate}</div>
+                            ` : ''}
+                        </div>
+                        <div class="book-actions">
+                            ${book.status === 'available' ? 
+                                `<button class="btn-checkout" onclick="library.checkOut(${book.id})">Check Out</button>` :
+                                `<button class="btn-checkin" onclick="library.checkIn(${book.id})">Check In</button>`
+                            }
+                            <button class="btn-delete" onclick="library.deleteBook(${book.id})">Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            updateStats() {
+                const total = this.books.length;
+                const available = this.books.filter(b => b.status === 'available').length;
+                const checkedOut = this.books.filter(b => b.status === 'checked-out').length;
+
+                document.getElementById('totalBooks').textContent = total;
+                document.getElementById('availableBooks').textContent = available;
+                document.getElementById('checkedOutBooks').textContent = checkedOut;
+            }
+
+            attachEventListeners() {
+                document.getElementById('addBookForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const title = document.getElementById('bookTitle').value.trim();
+                    const author = document.getElementById('bookAuthor').value.trim();
+                    const isbn = document.getElementById('bookISBN').value.trim();
+                    const description = document.getElementById('bookDescription').value.trim();
+
+                    this.addBook(title, author, isbn, description);
+                    e.target.reset();
+                });
+
+                document.getElementById('searchInput').addEventListener('input', () => {
+                    this.renderBooks();
+                });
+
+                document.getElementById('filterStatus').addEventListener('change', () => {
+                    this.renderBooks();
+                });
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        }
+
+        // Initialize the library system
+        const library = new Library();
+    </script>
+</body>
+</html>
