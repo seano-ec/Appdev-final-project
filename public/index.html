@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Library System</title>
+    <link href="style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 Mini Library System</h1>
+            <p>Manage your book collection with ease</p>
+        </header>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalBooks">0</div>
+                <div class="stat-label">Total Books</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="availableBooks">0</div>
+                <div class="stat-label">Available</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="checkedOutBooks">0</div>
+                <div class="stat-label">Checked Out</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="form-section">
+                <h2>➕ Add New Book</h2>
+                <form id="addBookForm">
+                    <div class="form-group">
+                        <label for="bookTitle">Book Title *</label>
+                        <input type="text" id="bookTitle" required placeholder="Enter book title">
+                    </div>
+                    <div class="form-group">
+                        <label for="bookAuthor">Author *</label>
+                        <input type="text" id="bookAuthor" required placeholder="Enter author name">
+                    </div>
+                    <div class="form-group">
+                        <label for="bookISBN">ISBN</label>
+                        <input type="text" id="bookISBN" placeholder="Enter ISBN (optional)">
+                    </div>
+                    <div class="form-group">
+                        <label for="bookDescription">Description</label>
+                        <textarea id="bookDescription" placeholder="Brief description (optional)"></textarea>
+                    </div>
+                    <button type="submit">Add Book</button>
+                </form>
+            </div>
+
+            <div class="books-section">
+                <h2>📖 Book Collection</h2>
+                <div class="search-filter">
+                    <input type="text" id="searchInput" placeholder="🔍 Search by title, author, or ISBN...">
+                    <select id="filterStatus">
+                        <option value="all">All Books</option>
+                        <option value="available">Available</option>
+                        <option value="checked-out">Checked Out</option>
+                    </select>
+                </div>
+                <div id="bookList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
