@@ -1,6 +1,7 @@
 class Library {
     constructor() {
         this.books = [];
+        this.currentBookId = null;
         this.init();
     }
 
@@ -31,7 +32,7 @@ class Library {
             });
 
             if (response.ok) {
-                await this.loadBooks(); // Reload list
+                await this.loadBooks();
             }
         } catch (error) {
             console.error('Error adding book:', error);
@@ -71,6 +72,90 @@ class Library {
         } catch (error) {
             console.error('Error checking in:', error);
         }
+    }
+
+    // FETCH: Get borrower history
+    async viewHistory(bookId) {
+        try {
+            const response = await fetch(`/api/books/${bookId}/history`);
+            const data = await response.json();
+            
+            this.currentBookId = bookId;
+            this.showHistoryModal(data);
+        } catch (error) {
+            console.error('Error fetching history:', error);
+        }
+    }
+
+    // FETCH: Clear borrower history
+    async clearHistory(bookId) {
+        if (!confirm('Are you sure you want to clear all borrowing history for this book? This action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/books/${bookId}/history`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                this.showHistoryModal(data);
+            }
+        } catch (error) {
+            console.error('Error clearing history:', error);
+        }
+    }
+
+    // Show history in a modal
+    showHistoryModal(data) {
+        // Remove existing modal if any
+        const existingModal = document.querySelector('.modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>📜 Borrower History</h2>
+                    <span class="close-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <h3>${this.escapeHtml(data.title)}</h3>
+                    <p class="modal-author">by ${this.escapeHtml(data.author)}</p>
+                    
+                    ${data.history.length === 0 ? 
+                        '<p class="no-history">No borrowing history yet.</p>' :
+                        `<div class="history-list">
+                            ${data.history.map((record, index) => `
+                                <div class="history-item">
+                                    <div class="history-number">#${data.history.length - index}</div>
+                                    <div class="history-details">
+                                        <div><strong>Borrower:</strong> ${this.escapeHtml(record.borrower)}</div>
+                                        <div><strong>Checked out:</strong> ${record.checkoutDate}</div>
+                                        <div><strong>Returned:</strong> ${record.returnDate}</div>
+                                    </div>
+                                </div>
+                            `).reverse().join('')}
+                        </div>
+                        <button class="btn-clear-history" onclick="library.clearHistory('${this.currentBookId}')">
+                            🗑️ Clear All History
+                        </button>`
+                    }
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Close modal on click
+        modal.querySelector('.close-modal').onclick = () => modal.remove();
+        modal.onclick = (e) => {
+            if (e.target === modal) modal.remove();
+        };
     }
 
     // FETCH: Delete book
@@ -120,8 +205,6 @@ class Library {
             return;
         }
 
-        // Note: MongoDB uses '_id', not 'id'. 
-        // Also added quotes around ID in onclick function calls to support string IDs.
         bookList.innerHTML = filteredBooks.map(book => `
             <div class="book-card ${book.status}">
                 <div class="book-header">
@@ -147,6 +230,7 @@ class Library {
                         `<button class="btn-checkout" onclick="library.checkOut('${book._id}')">Check Out</button>` :
                         `<button class="btn-checkin" onclick="library.checkIn('${book._id}')">Check In</button>`
                     }
+                    <button class="btn-history" onclick="library.viewHistory('${book._id}')">History</button>
                     <button class="btn-delete" onclick="library.deleteBook('${book._id}')">Delete</button>
                 </div>
             </div>
