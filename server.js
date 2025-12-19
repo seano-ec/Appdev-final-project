@@ -8,23 +8,43 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 require('dotenv').config();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://temp:temp123@cluster0.ddy3sjl.mongodb.net/library?retryWrites=true&w=majority';
+// Cached connection for serverless
+let cachedDb = null;
 
-mongoose.connect(MONGODB_URI)
-    .then(() => console.log('Connected to MongoDB'))
-    .catch(err => console.error('Could not connect to MongoDB', err));
+async function connectToDatabase() {
+    if (cachedDb && mongoose.connection.readyState === 1) {
+        return cachedDb;
+    }
 
-mongoose.connection.on('error', err => {
-    console.error('MongoDB connection error:', err);
-});
-mongoose.connection.on('disconnected', () => {
-    console.warn('MongoDB disconnected');
+    const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://temp:temp123@cluster0.ddy3sjl.mongodb.net/library?retryWrites=true&w=majority';
+
+    try {
+        await mongoose.connect(MONGODB_URI, {
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
+        });
+        
+        cachedDb = mongoose.connection;
+        console.log('Connected to MongoDB');
+        return cachedDb;
+    } catch (err) {
+        console.error('MongoDB connection error:', err);
+        throw err;
+    }
+}
+
+// Connect before handling requests
+app.use(async (req, res, next) => {
+    try {
+        await connectToDatabase();
+        next();
+    } catch (err) {
+        res.status(500).json({ message: 'Database connection failed', error: err.message });
+    }
 });
 
 // --- API Routes ---
