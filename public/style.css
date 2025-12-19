@@ -224,8 +224,8 @@ button[type="submit"]:hover { background-color: var(--primary-hover); transform:
 .btn-fav:hover { background-color: var(--bg-body) !important; }
 
 /* Heart icon color - unfavorited state */
-.btn-fav i { color: #94a3b8; } /* Default muted gray */
-body.light-mode .btn-fav i { color: #374151; } /* Much darker gray for light mode */
+.btn-fav i { color: lab(55.49% 74.81 52.36); } 
+body.light-mode .btn-fav i { color: #ff4545; }
 
 /* Heart icon color - favorited state */
 .btn-fav.favorited i { color: #ef4444 !important; }
