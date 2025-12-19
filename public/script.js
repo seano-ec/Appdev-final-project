@@ -343,5 +343,24 @@ clearHistoryBtn.onclick = () => {
     }
 };
 
+// === Theme Toggle Logic ===
+const themeToggleBtn = document.getElementById('themeToggle');
+const body = document.body;
+const icon = themeToggleBtn.querySelector('i');
+
+themeToggleBtn.addEventListener('click', () => {
+    // Toggle the class
+    body.classList.toggle('light-mode');
+    
+    // Switch the Icon
+    if (body.classList.contains('light-mode')) {
+        icon.classList.remove('ri-sun-line');
+        icon.classList.add('ri-moon-line');
+    } else {
+        icon.classList.remove('ri-moon-line');
+        icon.classList.add('ri-sun-line');
+    }
+});
+
 // Run Init
 init();
