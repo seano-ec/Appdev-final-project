@@ -22,12 +22,10 @@ const bookSchema = new mongoose.Schema({
         enum: ['available', 'checked-out'],
         default: 'available'
     },
-    // === NEW FIELD ADDED HERE ===
     isFavorite: {
         type: Boolean,
         default: false
     },
-    // ============================
     checkedOutBy: {
         type: String,
         default: null

@@ -380,7 +380,6 @@ function renderBooks() {
     });
 }
 
-// === Event Listeners ===
 addBookForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -421,7 +420,6 @@ window.toggleBookStatus = async (id) => {
     updateStats();
 };
 
-// === UPDATED FAVORITE LOGIC (With API) ===
 window.toggleFavorite = async (id) => {
     const book = myLibrary.find(b => b._id === id);
     if (!book) return;
@@ -433,8 +431,6 @@ window.toggleFavorite = async (id) => {
     // 2. Call API to save to MongoDB
     try {
         await toggleFavoriteInDB(id);
-        // (Optional) Re-fetch to ensure sync, but might cause flicker
-        // await fetchBooks(); 
     } catch (err) {
         // 3. Revert if API fails
         book.isFavorite = !book.isFavorite;
@@ -554,5 +550,4 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Run Init
 init();
