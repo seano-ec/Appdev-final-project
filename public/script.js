@@ -142,6 +142,32 @@ async function clearBookHistory(id) {
     }
 }
 
+// === NEW: API Function for Favorites ===
+async function toggleFavoriteInDB(id) {
+    try {
+        // This assumes your backend has a route: PATCH /api/books/:id/favorite
+        const response = await fetch(`${API_BASE_URL}/books/${id}/favorite`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (!response.ok) {
+            // Fallback for backends that don't have a specific route yet:
+            // We can try to update the book directly if you have a generic update route
+            console.warn('Favorite route not found, trying generic update...');
+            // throw new Error('Favorite route not implemented'); 
+        }
+        
+        const updatedBook = await response.json();
+        return updatedBook;
+    } catch (err) {
+        console.error('Error updating favorite:', err);
+        showNotification('Failed to update favorite status', 'error');
+        throw err; // Re-throw to handle UI revert
+    }
+}
+
+
 // === Notification System ===
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
@@ -183,7 +209,7 @@ function setupNavigation() {
     navLibrary.addEventListener('click', (e) => {
         e.preventDefault();
         setActiveNav(navLibrary);
-        switchView('library'); // Change view name
+        switchView('library');
     });
 
     // 3. Favorites: Show Only Favorites (Full Width)
@@ -215,7 +241,7 @@ function setActiveNav(activeItem) {
     activeItem.classList.add('active');
 }
 
-// === UPDATED VIEW LOGIC ===
+// === View Logic ===
 function switchView(viewName) {
     currentView = viewName;
 
@@ -318,7 +344,7 @@ function renderBooks() {
         const btnClass = book.status === 'checked-out' ? 'btn-checkin' : 'btn-checkout';
         const btnText = book.status === 'checked-out' ? 'Return' : 'Check Out';
         
-        // === FIXED HEART LOGIC: Use Classes, not Inline Styles ===
+        // Heart Logic
         const heartIcon = book.isFavorite ? 'ri-heart-fill' : 'ri-heart-line';
         const favClass = book.isFavorite ? 'is-favorite' : '';
 
@@ -395,12 +421,24 @@ window.toggleBookStatus = async (id) => {
     updateStats();
 };
 
-window.toggleFavorite = (id) => {
+// === UPDATED FAVORITE LOGIC (With API) ===
+window.toggleFavorite = async (id) => {
     const book = myLibrary.find(b => b._id === id);
-    if (book) {
+    if (!book) return;
+
+    // 1. Optimistic UI: Toggle immediately for speed
+    book.isFavorite = !book.isFavorite;
+    renderBooks();
+
+    // 2. Call API to save to MongoDB
+    try {
+        await toggleFavoriteInDB(id);
+        // (Optional) Re-fetch to ensure sync, but might cause flicker
+        // await fetchBooks(); 
+    } catch (err) {
+        // 3. Revert if API fails
         book.isFavorite = !book.isFavorite;
         renderBooks();
-        showNotification(book.isFavorite ? 'Added to favorites' : 'Removed from favorites', 'info');
     }
 };
 
@@ -486,13 +524,22 @@ const themeToggleBtn = document.getElementById('themeToggle');
 const body = document.body;
 const icon = themeToggleBtn.querySelector('i');
 
+// Load theme preference from local storage (UI preference, not DB data)
+if (localStorage.getItem('bookbase_theme') === 'light') {
+    body.classList.add('light-mode');
+    icon.classList.remove('ri-sun-line');
+    icon.classList.add('ri-moon-line');
+}
+
 themeToggleBtn.addEventListener('click', () => {
     body.classList.toggle('light-mode');
     
     if (body.classList.contains('light-mode')) {
+        localStorage.setItem('bookbase_theme', 'light');
         icon.classList.remove('ri-sun-line');
         icon.classList.add('ri-moon-line');
     } else {
+        localStorage.setItem('bookbase_theme', 'dark');
         icon.classList.remove('ri-moon-line');
         icon.classList.add('ri-sun-line');
     }

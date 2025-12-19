@@ -56,6 +56,23 @@ app.post('/api/books', async (req, res) => {
     }
 });
 
+app.patch('/api/books/:id/favorite', async (req, res) => {
+    try {
+        const book = await Book.findById(req.params.id);
+        if (!book) {
+            return res.status(404).json({ message: 'Book not found' });
+        }
+
+        // Toggle the boolean value (true -> false, or false -> true)
+        book.isFavorite = !book.isFavorite;
+        
+        const updatedBook = await book.save();
+        res.json(updatedBook);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 // Checkout a book
 app.patch('/api/books/:id/checkout', async (req, res) => {
     try {

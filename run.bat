@@ -36,6 +36,6 @@ echo      Close the 'MongoDB Server' and 'Library Backend' windows to stop the s
 echo ===================================================
 echo
 echo Notes:
-echo - If "mongod" is not recognized, ensure MongoDB is installed and its \bin folder is in PATH.
+echo - If "mongodb" is not recognized, ensure MongoDB is installed and its \bin folder is in PATH.
 echo - To use a custom port or remote MongoDB, set the environment variable MONGODB_URI or PORT before running this script.
 pause
