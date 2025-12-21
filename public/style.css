@@ -338,6 +338,58 @@ body.light-mode .btn-fav i { color: #ff4545; }
     box-shadow: 0 6px 8px rgba(16, 185, 129, 0.3);
 }
 
+/* === LOGIN SCREEN STYLES === */
+.login-container {
+    height: 100vh;
+    width: 100%;
+    background-color: var(--bg-body);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    top: 0; left: 0;
+    z-index: 2000;
+}
+
+.login-card {
+    background-color: var(--bg-card);
+    padding: 40px;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 400px;
+    border: var(--border);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    text-align: center;
+}
+
+.login-header { margin-bottom: 30px; }
+.logo-large { font-size: 32px; font-weight: 800; color: var(--primary); letter-spacing: 1px; }
+
+.full-width { width: 100%; margin-top: 10px; }
+
+.divider {
+    margin: 20px 0;
+    position: relative;
+    text-align: center;
+}
+.divider::before {
+    content: ''; position: absolute; top: 50%; left: 0; width: 100%;
+    height: 1px; background: var(--border); z-index: 1;
+}
+.divider span {
+    background: var(--bg-card); padding: 0 10px; color: var(--text-muted);
+    font-size: 12px; position: relative; z-index: 2;
+}
+
+.error-msg { color: var(--danger); font-size: 13px; margin-top: 5px; text-align: left;}
+
+/* Dropdown styling for login */
+#userSelect {
+    width: 100%; padding: 12px; background-color: var(--bg-input);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+    color: var(--text-main); outline: none;
+}
+
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* RESPONSIVE */
