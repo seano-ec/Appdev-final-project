@@ -1,10 +1,6 @@
-// === Configuration ===
 const API_BASE_URL = 'http://localhost:3000/api';
+let currentUser = null;
 
-// === Authentication State ===
-let currentUser = null; // { name: 'Admin', role: 'admin' } or { name: 'User', role: 'user' }
-
-// === DOM Elements ===
 const loginView = document.getElementById('loginView');
 const appView = document.getElementById('appView');
 const userSelect = document.getElementById('userSelect');
@@ -166,21 +162,21 @@ function loadApp() {
 
     // === ROLE BASED PERMISSIONS ===
     
-    // 1. ADMIN: Shows Everything
+    //admin
     if (currentUser.role === 'admin') {
-        navDashboard.style.display = 'block';      // Show Dashboard
-        navSettings.style.display = 'block';       // Show Settings
-        resetSystemSection.style.display = 'flex'; // Show Reset Button
+        navDashboard.style.display = 'block';     
+        navSettings.style.display = 'block';      
+        resetSystemSection.style.display = 'flex'; 
         switchView('dashboard');
     }
-    // 2. USER: Hides Dashboard & Reset
+    //USER
     else if (currentUser.role === 'user') {
-        navDashboard.style.display = 'none';       // Hide Dashboard (Stats/Add Book)
-        navSettings.style.display = 'block';       // Show Settings (For Theme)
-        resetSystemSection.style.display = 'none'; // Hide Reset Button
-        switchView('library');                     // Default to Library
+        navDashboard.style.display = 'none';     
+        navSettings.style.display = 'block';       
+        resetSystemSection.style.display = 'none'; 
+        switchView('library');                    
     }
-    // 3. GUEST: Hides Dashboard & Settings
+    //GUEST
     else if (currentUser.role === 'guest') {
         navDashboard.style.display = 'none';
         navSettings.style.display = 'none';
@@ -485,5 +481,4 @@ function renderRecentWidget() {
     });
 }
 
-// Start
 initAuth();
