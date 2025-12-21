@@ -255,14 +255,14 @@ body.light-mode .btn-fav i { color: #ff4545; }
 
 /* Force settings buttons to be standard width and height */
 .settings-panel button {
-    width: auto;             /* Override the 100% width from general button styles */
-    min-width: 140px;        /* Give them a consistent minimum width */
+    width: auto;           
+    min-width: 140px;        
     padding: 12px 20px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    margin: 0;               /* Remove margin-top from general styles */
+    margin: 0;              
 }
 
 .modal {
@@ -414,13 +414,10 @@ body.light-mode .btn-fav i { color: #ff4545; }
     overflow-y: auto;    
 }
 
-/* === UNIFORM BUTTON DESIGN === */
-
-/* Standardize .btn-primary and .btn-secondary to match the app design */
 .btn-primary, .btn-secondary {
     width: 100%;
-    padding: 14px;            /* Matches 'Add Book' button padding */
-    border-radius: 10px;      /* Matches form inputs */
+    padding: 14px;           
+    border-radius: 10px;    
     font-size: 15px;
     font-weight: 600;
     border: none;
