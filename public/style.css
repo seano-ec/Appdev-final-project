@@ -414,6 +414,51 @@ body.light-mode .btn-fav i { color: #ff4545; }
     overflow-y: auto;    
 }
 
+/* === UNIFORM BUTTON DESIGN === */
+
+/* Standardize .btn-primary and .btn-secondary to match the app design */
+.btn-primary, .btn-secondary {
+    width: 100%;
+    padding: 14px;            /* Matches 'Add Book' button padding */
+    border-radius: 10px;      /* Matches form inputs */
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Primary Button (Blue - Matches 'Add Book') */
+.btn-primary {
+    background-color: var(--primary);
+    color: white;
+    box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2); /* Subtle shadow */
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-2px); /* Lift effect */
+    box-shadow: 0 6px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Secondary Button (Dark Grey - For Guest/Cancel) */
+.btn-secondary {
+    background-color: var(--bg-input);
+    color: var(--text-muted);
+    border: 1px solid transparent;
+}
+
+.btn-secondary:hover {
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    border-color: var(--border); /* Adds border on hover for contrast */
+    transform: translateY(-2px);
+}
+
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* RESPONSIVE */
