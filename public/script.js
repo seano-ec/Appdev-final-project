@@ -2,10 +2,9 @@
 const API_BASE_URL = 'http://localhost:3000/api';
 
 // === Authentication State ===
-let currentUser = null; // { name: 'Admin', role: 'admin' } or { name: 'Guest', role: 'guest' }
+let currentUser = null; // { name: 'Admin', role: 'admin' } or { name: 'User', role: 'user' }
 
 // === DOM Elements ===
-// Login Elements
 const loginView = document.getElementById('loginView');
 const appView = document.getElementById('appView');
 const userSelect = document.getElementById('userSelect');
@@ -15,29 +14,15 @@ const loginBtn = document.getElementById('loginBtn');
 const guestLoginBtn = document.getElementById('guestLoginBtn');
 const loginError = document.getElementById('loginError');
 
-// App Elements
 const mainView = document.getElementById('mainView');
 const settingsView = document.getElementById('settingsView');
-const statsSection = document.getElementById('statsSection');
-const formSection = document.getElementById('formSection');
+const dashboardContent = document.getElementById('dashboardContent');
+const librarySection = document.getElementById('librarySection');
 const collectionTitle = document.getElementById('collectionTitle');
-const dashboardGrid = document.querySelector('.dashboard-grid'); 
 
-const bookList = document.getElementById('bookList');
-const addBookForm = document.getElementById('addBookForm');
-const searchInput = document.getElementById('searchInput');
-const filterStatus = document.getElementById('filterStatus');
-
-// Header Elements
 const userAvatarImg = document.getElementById('userAvatarImg');
 const userNameDisplay = document.getElementById('userNameDisplay');
 
-// Stats Elements
-const totalBooksEl = document.getElementById('totalBooks');
-const availableBooksEl = document.getElementById('availableBooks');
-const checkedOutBooksEl = document.getElementById('checkedOutBooks');
-
-// Navigation Elements
 const navDashboard = document.getElementById('nav-dashboard');
 const navLibrary = document.getElementById('nav-library');
 const navFavorites = document.getElementById('nav-favorites');
@@ -45,16 +30,19 @@ const navSettings = document.getElementById('nav-settings');
 const navLogout = document.getElementById('nav-logout');
 const navItems = document.querySelectorAll('.nav-item');
 
+const resetSystemSection = document.getElementById('resetSystemSection');
+
+let myLibrary = [];
+let currentView = 'dashboard';
+
 // === API Functions ===
-// ... (Your existing API functions remain exactly the same) ...
 async function fetchBooks() {
     try {
         const response = await fetch(`${API_BASE_URL}/books`);
-        if (!response.ok) throw new Error('Failed to fetch books');
+        if (!response.ok) throw new Error('Failed');
         myLibrary = await response.json();
         return myLibrary;
     } catch (err) {
-        console.error(err);
         showNotification('Using offline mode (Database fetch failed)', 'error');
         return [];
     }
@@ -65,9 +53,8 @@ async function addBookToDB(bookData) {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bookData)
         });
         if (!response.ok) throw new Error('Failed');
-        const newBook = await response.json();
         showNotification('Book added!', 'success');
-        return newBook;
+        return await response.json();
     } catch (err) { showNotification('Failed to add book', 'error'); return null; }
 }
 async function checkoutBook(id, borrower) {
@@ -104,18 +91,15 @@ async function fetchBookHistory(id) {
 async function clearBookHistory(id) {
     try {
         await fetch(`${API_BASE_URL}/books/${id}/history`, { method: 'DELETE' });
-        return await fetchBookHistory(id); // return empty list
+        return await fetchBookHistory(id); 
     } catch (err) { return null; }
 }
 async function toggleFavoriteInDB(id) {
-    try {
-        await fetch(`${API_BASE_URL}/books/${id}/favorite`, { method: 'PATCH' });
-    } catch (err) { console.error(err); }
+    try { await fetch(`${API_BASE_URL}/books/${id}/favorite`, { method: 'PATCH' }); } catch (err) {}
 }
 
 // === AUTHENTICATION LOGIC ===
 
-// 1. Check if user is already logged in on load
 function initAuth() {
     const savedUser = localStorage.getItem('bookbase_user');
     if (savedUser) {
@@ -127,12 +111,10 @@ function initAuth() {
     }
 }
 
-// 2. Handle User Selection
 userSelect.addEventListener('change', () => {
     loginError.classList.add('hidden');
     loginPassword.value = '';
-    
-    // Only show password field for Admin
+    // Show password only for Admin
     if (userSelect.value === 'admin') {
         passwordSection.classList.remove('hidden');
     } else {
@@ -140,71 +122,74 @@ userSelect.addEventListener('change', () => {
     }
 });
 
-// 3. Login Button Click
 loginBtn.addEventListener('click', () => {
     const role = userSelect.value;
-    
     if (!role) {
         showNotification('Please select a user', 'error');
         return;
     }
 
     if (role === 'admin') {
-        // Simple hardcoded password check
         if (loginPassword.value === 'admin123') { 
             loginUser('Administrator', 'admin', 'https://ui-avatars.com/api/?name=Admin&background=3b82f6&color=fff');
         } else {
             loginError.classList.remove('hidden');
-            loginPassword.classList.add('error-border');
         }
     } else {
-        // Librarian (No password for demo)
-        loginUser('Librarian', 'librarian', 'https://ui-avatars.com/api/?name=Librarian&background=10b981&color=fff');
+        // Log in as User
+        loginUser('User', 'user', 'https://ui-avatars.com/api/?name=User&background=10b981&color=fff');
     }
 });
 
-// 4. Guest Login
 guestLoginBtn.addEventListener('click', () => {
     loginUser('Guest', 'guest', 'https://ui-avatars.com/api/?name=Guest&background=6b7280&color=fff');
 });
 
-// 5. Execute Login
 function loginUser(name, role, avatar) {
     currentUser = { name, role, avatar };
     localStorage.setItem('bookbase_user', JSON.stringify(currentUser));
     loadApp();
 }
 
-// 6. Logout Function
 window.logout = () => {
     localStorage.removeItem('bookbase_user');
-    location.reload(); // Reloads page to return to login
+    location.reload();
 };
 
 function loadApp() {
     loginView.classList.add('hidden');
     appView.classList.remove('hidden');
     
-    // Update Profile UI
     userNameDisplay.textContent = currentUser.name;
     userAvatarImg.src = currentUser.avatar;
 
-    // Permissions: If guest, hide "Add Book" form and "Settings"
-    if (currentUser.role === 'guest') {
-        formSection.style.display = 'none';
+    // === ROLE BASED PERMISSIONS ===
+    
+    // 1. ADMIN: Shows Everything
+    if (currentUser.role === 'admin') {
+        navDashboard.style.display = 'block';      // Show Dashboard
+        navSettings.style.display = 'block';       // Show Settings
+        resetSystemSection.style.display = 'flex'; // Show Reset Button
+        switchView('dashboard');
+    }
+    // 2. USER: Hides Dashboard & Reset
+    else if (currentUser.role === 'user') {
+        navDashboard.style.display = 'none';       // Hide Dashboard (Stats/Add Book)
+        navSettings.style.display = 'block';       // Show Settings (For Theme)
+        resetSystemSection.style.display = 'none'; // Hide Reset Button
+        switchView('library');                     // Default to Library
+    }
+    // 3. GUEST: Hides Dashboard & Settings
+    else if (currentUser.role === 'guest') {
+        navDashboard.style.display = 'none';
         navSettings.style.display = 'none';
-        // Adjust grid for guest
-        dashboardGrid.style.gridTemplateColumns = '1fr'; 
+        switchView('library');
     }
 
-    // Initialize Data
     initData(); 
 }
 
-// === MAIN APP LOGIC ===
-
 async function initData() {
-    showNotification(`Welcome back, ${currentUser.name}`, 'info');
     await fetchBooks();
     renderBooks();
     updateStats();
@@ -212,23 +197,13 @@ async function initData() {
     setupTheme();
 }
 
-// === Navigation ===
+// === Navigation & Views ===
 function setupNavigation() {
     navDashboard.addEventListener('click', (e) => { e.preventDefault(); setActiveNav(navDashboard); switchView('dashboard'); });
     navLibrary.addEventListener('click', (e) => { e.preventDefault(); setActiveNav(navLibrary); switchView('library'); });
     navFavorites.addEventListener('click', (e) => { e.preventDefault(); setActiveNav(navFavorites); switchView('favorites'); });
-    
-    navSettings.addEventListener('click', (e) => { 
-        e.preventDefault(); 
-        if(currentUser.role === 'guest') return; // Double check
-        setActiveNav(navSettings); 
-        switchView('settings'); 
-    });
-
-    navLogout.addEventListener('click', (e) => {
-        e.preventDefault();
-        if(confirm('Logout?')) logout();
-    });
+    navSettings.addEventListener('click', (e) => { e.preventDefault(); setActiveNav(navSettings); switchView('settings'); });
+    navLogout.addEventListener('click', (e) => { e.preventDefault(); if(confirm('Logout?')) logout(); });
 }
 
 function setActiveNav(activeItem) {
@@ -237,64 +212,66 @@ function setActiveNav(activeItem) {
 }
 
 function switchView(viewName) {
-    // Hide all main sections
+    currentView = viewName;
     mainView.classList.remove('hidden');
     settingsView.classList.add('hidden');
-    
-    // Default Grid
-    if (currentUser.role !== 'guest') {
-        dashboardGrid.style.gridTemplateColumns = '350px 1fr';
-        formSection.style.display = 'block';
-        statsSection.style.display = 'grid';
-    } else {
-        dashboardGrid.style.gridTemplateColumns = '1fr';
-    }
+    collectionTitle.innerHTML = '<i class="ri-book-open-line"></i> Book Collection';
+
+    // Reset visibility
+    dashboardContent.style.display = 'none';
+    librarySection.style.display = 'block'; // Always show list unless settings
 
     if (viewName === 'dashboard') {
-        if (currentUser.role === 'guest') formSection.style.display = 'none';
+        dashboardContent.style.display = 'block'; // Show Stats + Form
         renderBooks();
-    } else if (viewName === 'library' || viewName === 'favorites') {
-        statsSection.style.display = 'none';
-        formSection.style.display = 'none';
-        dashboardGrid.style.gridTemplateColumns = '1fr';
-        renderBooks(viewName === 'favorites');
-    } else if (viewName === 'settings') {
+    } 
+    else if (viewName === 'library') {
+        collectionTitle.innerHTML = '<i class="ri-book-2-line"></i> My Full Library';
+        renderBooks();
+    }
+    else if (viewName === 'favorites') {
+        collectionTitle.innerHTML = '<i class="ri-heart-fill" style="color:#ef4444"></i> Favorite Books';
+        renderBooks(true);
+    } 
+    else if (viewName === 'settings') {
         mainView.classList.add('hidden');
         settingsView.classList.remove('hidden');
     }
 }
 
 // === Core Logic ===
+function updateStats() {
+    document.getElementById('totalBooks').textContent = myLibrary.length;
+    const checkedOut = myLibrary.filter(b => b.status === 'checked-out').length;
+    document.getElementById('checkedOutBooks').textContent = checkedOut;
+    document.getElementById('availableBooks').textContent = myLibrary.length - checkedOut;
+}
+
 function renderBooks(onlyFavorites = false) {
-    bookList.innerHTML = '';
-    const searchTerm = searchInput.value.toLowerCase();
-    const statusFilter = filterStatus.value;
+    const list = document.getElementById('bookList');
+    list.innerHTML = '';
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const statusFilter = document.getElementById('filterStatus').value;
 
     const filtered = myLibrary.filter(book => {
         const matchesSearch = book.title.toLowerCase().includes(searchTerm) || book.author.toLowerCase().includes(searchTerm);
         let matchesStatus = true;
         if (statusFilter === 'available') matchesStatus = book.status === 'available';
         if (statusFilter === 'checked-out') matchesStatus = book.status === 'checked-out';
-        
         const matchesFav = onlyFavorites ? book.isFavorite : true;
-        
         return matchesSearch && matchesStatus && matchesFav;
     });
 
     if (filtered.length === 0) {
-        bookList.innerHTML = `<div class="empty-state"><p>No books found.</p></div>`;
+        list.innerHTML = `<div class="empty-state"><p>No books found.</p></div>`;
         return;
     }
 
     filtered.forEach(book => {
         const card = document.createElement('div');
         card.className = `book-card ${book.status === 'checked-out' ? 'checked-out' : 'available'}`;
-        
         const btnClass = book.status === 'checked-out' ? 'btn-checkin' : 'btn-checkout';
         const btnText = book.status === 'checked-out' ? 'Return' : 'Check Out';
-        const heartIcon = book.isFavorite ? 'ri-heart-fill' : 'ri-heart-line';
-        
-        // Hide delete button for guests
         const deleteBtn = currentUser.role === 'admin' 
             ? `<button class="btn-delete" onclick="deleteBook('${book._id}')"><i class="ri-delete-bin-line"></i></button>` 
             : '';
@@ -307,58 +284,40 @@ function renderBooks(onlyFavorites = false) {
             <div class="book-author">by ${book.author}</div>
             <div class="book-description">${book.description}</div>
             ${book.checkedOutBy ? `<div class="book-borrower">Borrowed by: ${book.checkedOutBy}</div>` : ''}
-            
             <div class="book-actions">
                 <button class="${btnClass}" onclick="toggleBookStatus('${book._id}')">${btnText}</button>
-                <button class="btn-fav ${book.isFavorite ? 'is-favorite' : ''}" onclick="toggleFavorite('${book._id}')"><i class="${heartIcon}"></i></button>
+                <button class="btn-fav ${book.isFavorite ? 'is-favorite' : ''}" onclick="toggleFavorite('${book._id}')"><i class="${book.isFavorite ? 'ri-heart-fill' : 'ri-heart-line'}"></i></button>
                 <button class="btn-history" onclick="viewHistory('${book._id}')"><i class="ri-history-line"></i></button>
                 ${deleteBtn}
             </div>
         `;
-        bookList.appendChild(card);
+        list.appendChild(card);
     });
 }
 
-function updateStats() {
-    totalBooksEl.textContent = myLibrary.length;
-    const checkedOut = myLibrary.filter(b => b.status === 'checked-out').length;
-    checkedOutBooksEl.textContent = checkedOut;
-    availableBooksEl.textContent = myLibrary.length - checkedOut;
-}
-
-// === Action Handlers ===
+// === Actions ===
 let pendingBookId = null;
 
 window.toggleBookStatus = async (id) => {
     const book = myLibrary.find(b => b._id === id);
     if (!book) return;
 
-    // CHECKOUT LOGIC
     if (book.status === 'available') {
-        
-        // === GUEST RESTRICTION ===
         if (currentUser.role === 'guest') {
             document.getElementById('guestModal').style.display = 'flex';
             return;
         }
-
-        // Proceed to Checkout Modal
         pendingBookId = id;
         document.getElementById('borrowerNameInput').value = '';
         document.getElementById('borrowModal').style.display = 'flex';
         document.getElementById('borrowerNameInput').focus();
-    } 
-    // RETURN LOGIC
-    else {
+    } else {
         await checkinBook(id);
-        await fetchBooks();
-        renderBooks();
-        updateStats();
+        await initData();
     }
 };
 
-// Form Submissions
-addBookForm.addEventListener('submit', async (e) => {
+document.getElementById('addBookForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const bookData = {
         title: document.getElementById('bookTitle').value,
@@ -367,70 +326,57 @@ addBookForm.addEventListener('submit', async (e) => {
         description: document.getElementById('bookDescription').value
     };
     if(await addBookToDB(bookData)) {
-        await fetchBooks();
-        renderBooks();
-        updateStats();
-        addBookForm.reset();
+        await initData();
+        document.getElementById('addBookForm').reset();
     }
 });
 
-// Search & Filter
-searchInput.addEventListener('input', () => renderBooks(currentView === 'favorites'));
-filterStatus.addEventListener('change', () => renderBooks(currentView === 'favorites'));
+document.getElementById('searchInput').addEventListener('input', () => renderBooks(currentView === 'favorites'));
+document.getElementById('filterStatus').addEventListener('change', () => renderBooks(currentView === 'favorites'));
 
-// Global Wrappers
 window.toggleFavorite = async (id) => {
     const book = myLibrary.find(b => b._id === id);
     if (book) {
         book.isFavorite = !book.isFavorite;
-        renderBooks();
+        renderBooks(currentView === 'favorites');
         await toggleFavoriteInDB(id);
     }
 };
 window.deleteBook = async (id) => {
     if(confirm('Delete book?')) {
-        if(await deleteBookFromDB(id)) {
-            await fetchBooks();
-            renderBooks();
-            updateStats();
-        }
+        if(await deleteBookFromDB(id)) await initData();
     }
 };
 window.resetSystem = async () => {
     if(confirm('Delete ALL books?')) {
         for(const b of myLibrary) await deleteBookFromDB(b._id);
-        await fetchBooks();
-        renderBooks();
-        updateStats();
+        await initData();
     }
 };
 
-// === Modal Logic (Borrow, Guest, History) ===
-const borrowModal = document.getElementById('borrowModal');
-const guestModal = document.getElementById('guestModal');
-const historyModal = document.getElementById('historyModal');
+// === Modals ===
+const closeModals = () => {
+    document.getElementById('borrowModal').style.display = 'none';
+    document.getElementById('guestModal').style.display = 'none';
+    document.getElementById('historyModal').style.display = 'none';
+    pendingBookId = null;
+};
 
-// Borrow Confirm
 document.getElementById('confirmBorrowBtn').onclick = async () => {
     const name = document.getElementById('borrowerNameInput').value;
     if (name && pendingBookId) {
         await checkoutBook(pendingBookId, name);
-        borrowModal.style.display = 'none';
-        await fetchBooks();
-        renderBooks();
-        updateStats();
-        pendingBookId = null;
+        closeModals();
+        await initData();
     }
 };
 
-// History View
 window.viewHistory = async (id) => {
     const data = await fetchBookHistory(id);
     if (data) {
         document.getElementById('modalBookTitle').textContent = data.title;
         document.getElementById('modalBookAuthor').textContent = data.author;
-        const list = document.getElementById('modalHistoryList');
-        list.innerHTML = data.history.map((h, i) => `
+        document.getElementById('modalHistoryList').innerHTML = data.history.map((h, i) => `
             <div class="history-item">
                 <div class="history-number">#${data.history.length - i}</div>
                 <div class="history-details">
@@ -438,29 +384,15 @@ window.viewHistory = async (id) => {
                     <div><strong>Date:</strong> ${h.checkoutDate}</div>
                 </div>
             </div>`).join('') || '<p>No history</p>';
-        historyModal.style.display = 'flex';
+        document.getElementById('historyModal').style.display = 'flex';
     }
 };
 
-// Close Modals
-const closeModals = () => {
-    borrowModal.style.display = 'none';
-    guestModal.style.display = 'none';
-    historyModal.style.display = 'none';
-    pendingBookId = null;
-};
-
-// Close buttons
-document.getElementById('cancelBorrowBtn').onclick = closeModals;
-document.getElementById('closeBorrowModal').onclick = closeModals;
-document.getElementById('closeGuestModal').onclick = closeModals;
-document.querySelector('.close-modal').onclick = closeModals;
-
+document.querySelectorAll('.close-modal, #cancelBorrowBtn').forEach(btn => btn.onclick = closeModals);
 window.onclick = (e) => {
-    if ([borrowModal, guestModal, historyModal].includes(e.target)) closeModals();
+    if (e.target.classList.contains('modal')) closeModals();
 };
 
-// Notification Toast
 function showNotification(msg, type) {
     const n = document.createElement('div');
     n.className = `notification notification-${type}`;
@@ -470,14 +402,40 @@ function showNotification(msg, type) {
     setTimeout(() => n.remove(), 3000);
 }
 
-// Theme
+// === Theme Logic (Header + Settings) ===
 function setupTheme() {
-    const toggle = document.getElementById('themeToggle');
-    if(localStorage.getItem('theme')==='light') document.body.classList.add('light-mode');
-    toggle.onclick = () => {
-        document.body.classList.toggle('light-mode');
-        localStorage.setItem('theme', document.body.classList.contains('light-mode')?'light':'dark');
+    const headerBtn = document.getElementById('headerThemeBtn');
+    const settingsBtn = document.getElementById('settingsThemeBtn');
+    
+    // Check saved theme
+    if(localStorage.getItem('theme')==='light') updateThemeUI('light');
+    else updateThemeUI('dark');
+
+    // Button Logic
+    const toggleTheme = () => {
+        const isLight = document.body.classList.contains('light-mode');
+        updateThemeUI(isLight ? 'dark' : 'light');
     };
+
+    headerBtn.onclick = toggleTheme;
+    settingsBtn.onclick = toggleTheme;
+}
+
+function updateThemeUI(theme) {
+    const headerIcon = document.querySelector('#headerThemeBtn i');
+    const settingsIcon = document.querySelector('#settingsThemeBtn i');
+    
+    if (theme === 'light') {
+        document.body.classList.add('light-mode');
+        localStorage.setItem('theme', 'light');
+        if(headerIcon) headerIcon.className = 'ri-moon-line';
+        if(settingsIcon) settingsIcon.className = 'ri-moon-line';
+    } else {
+        document.body.classList.remove('light-mode');
+        localStorage.setItem('theme', 'dark');
+        if(headerIcon) headerIcon.className = 'ri-sun-line';
+        if(settingsIcon) settingsIcon.className = 'ri-sun-line';
+    }
 }
 
 // Start
