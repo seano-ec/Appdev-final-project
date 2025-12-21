@@ -43,7 +43,7 @@
 Follow these steps to run the project locally.
 
 ### 1. Clone the Repository
-git clone [https://github.com/yourusername/bookbase.git](https://github.com/yourusername/bookbase.git)
+git clone [https://github.com/yourusername/Appdev-final-project.git](https://github.com/yourusername/Appdev-final-project.git)
 cd bookbase
 
 ### 2. Install dependencies
