@@ -404,26 +404,28 @@ addBookForm.addEventListener('submit', async (e) => {
 searchInput.addEventListener('input', renderBooks);
 filterStatus.addEventListener('change', renderBooks);
 
-// === Global Functions ===
+let pendingBookId = null;
+
 window.toggleBookStatus = async (id) => {
     const book = myLibrary.find(b => b._id === id);
     if (!book) return;
     
     if (book.status === 'available') {
-        const borrowerName = prompt("Please enter the borrower's name:");
-
-        if (borrowerName === null || borrowerName.trim() === "") {
-            return; 
-        }
-        await checkoutBook(id, borrowerName.trim());
-
+        // OPEN THE CUSTOM WINDOW INSTEAD OF PROMPT
+        pendingBookId = id;
+        document.getElementById('borrowerNameInput').value = ''; 
+        document.getElementById('borrowModal').style.display = 'flex';
+        document.getElementById('borrowerNameInput').focus();
     } else {
+        // RETURN BOOK LOGIC
         await checkinBook(id);
+        await fetchBooks();
+        renderBooks();
+        updateStats();
     }
-    await fetchBooks();
-    renderBooks();
-    updateStats();
 };
+
+
 
 window.toggleFavorite = async (id) => {
     const book = myLibrary.find(b => b._id === id);
@@ -546,6 +548,29 @@ themeToggleBtn.addEventListener('click', () => {
     }
 });
 
+// === BORROW WINDOW LOGIC ===
+document.getElementById('confirmBorrowBtn').onclick = async () => {
+    const name = document.getElementById('borrowerNameInput').value;
+    
+    if (name && name.trim() !== "" && pendingBookId) {
+        await checkoutBook(pendingBookId, name.trim());
+        
+        // Refresh UI
+        document.getElementById('borrowModal').style.display = 'none';
+        await fetchBooks();
+        renderBooks();
+        updateStats();
+        pendingBookId = null;
+    }
+};
+
+// Helper function to close the window
+window.closeBorrowModal = () => {
+    document.getElementById('borrowModal').style.display = 'none';
+    pendingBookId = null;
+};
+
+
 // Add CSS for animations
 const style = document.createElement('style');
 style.textContent = `
@@ -556,3 +581,4 @@ style.textContent = `
 document.head.appendChild(style);
 
 init();
+
