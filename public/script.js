@@ -449,8 +449,15 @@ function renderBooks(onlyFavorites = false) {
         card.className = `book-card ${book.status === 'checked-out' ? 'checked-out' : 'available'}`;
         const btnClass = book.status === 'checked-out' ? 'btn-checkin' : 'btn-checkout';
         const btnText = book.status === 'checked-out' ? 'Return' : 'Check Out';
+        
+        // Only show delete button for admin
         const deleteBtn = currentUser.role === 'admin'
             ? `<button class="btn-delete" onclick="deleteBook('${book._id}')"><i class="ri-delete-bin-line"></i></button>`
+            : '';
+        
+        // Only show history button for admin
+        const historyBtn = currentUser.role === 'admin'
+            ? `<button class="btn-history" onclick="viewHistory('${book._id}')"><i class="ri-history-line"></i></button>`
             : '';
 
         card.innerHTML = `
@@ -464,7 +471,7 @@ function renderBooks(onlyFavorites = false) {
             <div class="book-actions">
                 <button class="${btnClass}" onclick="toggleBookStatus('${book._id}')">${btnText}</button>
                 <button class="btn-fav ${book.isFavorite ? 'is-favorite' : ''}" onclick="toggleFavorite('${book._id}')"><i class="${book.isFavorite ? 'ri-heart-fill' : 'ri-heart-line'}"></i></button>
-                <button class="btn-history" onclick="viewHistory('${book._id}')"><i class="ri-history-line"></i></button>
+                ${historyBtn}
                 ${deleteBtn}
             </div>
         `;
@@ -567,10 +574,13 @@ window.viewHistory = async (id) => {
                     <div><strong>Date:</strong> ${h.checkoutDate}</div>
                 </div>
             </div>`).join('') || '<p>No history</p>';
-        document.getElementById('historyModal').style.display = 'flex';
+        
+        // Properly show the modal - remove hidden class AND set display
+        const modal = document.getElementById('historyModal');
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
     }
 };
-
 // Setup modal close buttons
 function setupModalListeners() {
     // Register modal close buttons
