@@ -326,24 +326,32 @@ function loadApp() {
     loginView.classList.add('hidden');
     appView.classList.remove('hidden');
     
-    userNameDisplay.textContent = currentUser.username;
-    userAvatarImg.src = currentUser.avatar;
+    userNameDisplay.textContent = currentUser.username || currentUser.name || 'User';
+    userAvatarImg.src = currentUser.avatar || 'https://ui-avatars.com/api/?name=Guest&background=6b7280&color=fff'; 
 
     // === ROLE BASED PERMISSIONS ===
     if (currentUser.role === 'admin') {
         navDashboard.style.display = 'block';
         navSettings.style.display = 'block';
         resetSystemSection.style.display = 'flex';
+        
         switchView('dashboard');
-    } else if (currentUser.role === 'user') {
+        setActiveNav(navDashboard); 
+    } 
+    else if (currentUser.role === 'user') {
         navDashboard.style.display = 'none';
         navSettings.style.display = 'block';
         resetSystemSection.style.display = 'none';
+        
         switchView('library');
-    } else if (currentUser.role === 'guest') {
+        setActiveNav(navLibrary);  
+    } 
+    else if (currentUser.role === 'guest') {
         navDashboard.style.display = 'none';
         navSettings.style.display = 'none';
+        
         switchView('library');
+        setActiveNav(navLibrary);   
     }
 
     initData();
