@@ -14,7 +14,7 @@ require('dotenv').config();
 const JWT_SECRET = process.env.JWT_SECRET || 'zzLKyuovSbdr3+ay79eNoRhQIf2fzczP5yPdx5ll5iPK3/J3EZxotmNO0LacF7O2DTCd9nvOx+wg/h0NiNn18Q==';
 
 app.use(cors({
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000', /\.vercel\.app$/],
+    origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://appdev-final-project-ten.vercel.app/', /\.vercel\.app$/],
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
