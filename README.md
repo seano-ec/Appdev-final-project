@@ -50,3 +50,5 @@ cd bookbase
 npm install express mongoose cors body-parser
 
 ### 3. Open the run.bat file
+
+### 4. Or access at [Vercel Deployment](https://appdev-final-project-ten.vercel.app/)
